@@ -1,5 +1,6 @@
-import { Shinobi, Task, useGameState, useGameUpdate } from "./state";
-import { assert } from "./util";
+import { Shinobi, Task, useGameState, useSetGameState } from "./state";
+import { assignTaskToShinobi } from "./state/actions";
+import { IR, assert } from "./util";
 
 function usePoints() {
   return useGameState((state) => ({
@@ -9,7 +10,7 @@ function usePoints() {
 }
 
 function useShinobiPurchasing(shinobi: Shinobi.T) {
-  const update = useGameUpdate();
+  const update = useSetGameState();
   const cost = Shinobi.cost(shinobi);
   return {
     cost,
@@ -24,20 +25,14 @@ function useShinobiPurchasing(shinobi: Shinobi.T) {
             (s) => s.id !== shinobi.id
           ),
         },
-        shinobi: {
-          ids: state.shinobi.ids.concat(shinobi.id),
-          record: {
-            ...state.shinobi.record,
-            [shinobi.id]: shinobi,
-          },
-        },
+        shinobi: IR.add(shinobi, state.shinobi),
       }));
     },
   };
 }
 
-function HireShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
-  const { points, pointsSpent } = usePoints();
+function GraduateShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
+  const { points } = usePoints();
   const { cost, buy } = useShinobiPurchasing(shinobi);
   return (
     <li>
@@ -47,7 +42,7 @@ function HireShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
           buy();
         }}
       >
-        Hire {shinobi.name} ({shinobi.level}), {cost}
+        Graduate {shinobi.name} ({shinobi.level}), {cost}
       </button>
     </li>
   );
@@ -55,62 +50,48 @@ function HireShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
 
 function useSuggestedShinobiAssignment() {
   const { shinobi } = useGameState((state) => ({
-    shinobi: state.shinobi.ids.map((id) => state.shinobi.record[id]),
+    shinobi: IR.list(state.shinobi),
   }));
-  return shinobi.find((s) => !s.assignedTask) ?? null;
+  return shinobi.find((s) => s.behavior.type === "idle") ?? null;
 }
 
 function AssignTaskButton({ task }: { task: Task.T }) {
-  const update = useGameUpdate();
+  const setGameState = useSetGameState();
 
   const selectedShinobi = useSuggestedShinobiAssignment();
 
-  const assignShinobi = () => {
+  const handleClick = () => {
     assert(selectedShinobi);
-    update((state) => ({
-      ...state,
-      shinobi: {
-        ...state.shinobi,
-        record: {
-          ...state.shinobi.record,
-          [selectedShinobi.id]: {
-            ...state.shinobi.record[selectedShinobi.id],
-            assignedTask: task,
-          },
-        },
-      },
-      village: {
-        ...state.village,
-        tasks: state.village.tasks.filter((t) => t.id !== task.id),
-      },
-    }));
+    setGameState((state) =>
+      assignTaskToShinobi(task, selectedShinobi.id, state)
+    );
   };
 
   return (
     <li>
-      <button disabled={!selectedShinobi} onClick={assignShinobi}>
-        {task.name}
+      <button disabled={!selectedShinobi} onClick={handleClick}>
+        {task.name} ({task.level})
       </button>
     </li>
   );
 }
 
 export function Village() {
-  const { hireableShinobi, tasks } = useGameState((state) => ({
-    hireableShinobi: state.village.shinobiInTraining,
-    tasks: state.village.tasks,
+  const { shinobiInTraining, tasks } = useGameState((state) => ({
+    shinobiInTraining: state.village.shinobiInTraining,
+    tasks: IR.list(state.village.tasks),
   }));
 
   return (
     <div id="village">
       <h2>Village</h2>
 
-      {Boolean(hireableShinobi.length) && (
+      {Boolean(shinobiInTraining.length) && (
         <>
           <h3>Graduate Shinobi</h3>
           <ul>
-            {hireableShinobi.map((shinobi) => (
-              <HireShinobiButton key={shinobi.id} shinobi={shinobi} />
+            {shinobiInTraining.map((shinobi) => (
+              <GraduateShinobiButton key={shinobi.id} shinobi={shinobi} />
             ))}
           </ul>
         </>

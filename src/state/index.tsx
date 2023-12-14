@@ -12,17 +12,17 @@ import {
   Subject,
   distinctUntilChanged,
   from,
+  identity,
   map,
   mergeAll,
-  startWith,
+  tap,
 } from "rxjs";
 import { shallowEqual } from "../util";
 
 import * as Shinobi from "./shinobi";
 import * as Task from "./task";
 
-export { Shinobi };
-export { Task };
+export { Shinobi, Task };
 
 export interface GameState {
   points: number;
@@ -33,7 +33,10 @@ export interface GameState {
   };
   village: {
     shinobiInTraining: Shinobi.T[];
-    tasks: Task.T[];
+    tasks: {
+      ids: Task.Id[];
+      record: Record<Task.Id, Task.T>;
+    };
   };
 }
 
@@ -46,7 +49,7 @@ const GameContext = createContext<{
 });
 
 let __game_state__: GameState = {
-  points: 0,
+  points: 100,
   pointsSpent: 0,
   shinobi: {
     ids: [],
@@ -54,7 +57,10 @@ let __game_state__: GameState = {
   },
   village: {
     shinobiInTraining: [Shinobi.make()],
-    tasks: [Task.make()],
+    tasks: {
+      ids: [],
+      record: {},
+    },
   },
 };
 
@@ -75,7 +81,7 @@ export type GameEffect = (
 
 export function runGameEffects(effects: GameEffect[]) {
   const update$ = from(
-    effects.map((effect) => effect(gameSubject.pipe(startWith(getGameState()))))
+    effects.map((effect) => effect(gameSubject.asObservable()))
   ).pipe(mergeAll());
   return update$.subscribe((reducer) => {
     setGameState(reducer(getGameState()));
@@ -85,7 +91,7 @@ export function runGameEffects(effects: GameEffect[]) {
 export function GameProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
-      state$: gameSubject.pipe(startWith(getGameState())),
+      state$: gameSubject.asObservable(),
       update: (reducer: (state: GameState) => GameState) =>
         setGameState(reducer(getGameState())),
     }),
@@ -94,7 +100,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
-export function useGameUpdate() {
+export function useSetGameState() {
   return useContext(GameContext).update;
 }
 
@@ -103,7 +109,7 @@ export function useGameStateStream() {
   return state$;
 }
 
-export function useGameState<T>(getter: (state: GameState) => T) {
+export function useGameState<T>(getter: (state: GameState) => T, debug?: any) {
   const state$ = useGameStateStream();
   const [local, setLocal] = useState(() => getter(getGameState()));
 
@@ -111,9 +117,10 @@ export function useGameState<T>(getter: (state: GameState) => T) {
     const sub = state$
       .pipe(
         map(getter),
-        distinctUntilChanged((s1, s2) => !shallowEqual(s1, s2))
+        distinctUntilChanged((s1, s2) => shallowEqual(s1, s2)),
+        debug ? tap(() => console.log(debug)) : identity
       )
-      .subscribe(setLocal);
+      .subscribe((s) => setLocal(s));
     return () => {
       sub.unsubscribe();
     };

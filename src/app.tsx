@@ -1,5 +1,6 @@
 import "./app.css";
 
+import { ShinobiList } from "./shinobi-list";
 import { useGameState } from "./state";
 import { Village } from "./village";
 
@@ -8,21 +9,6 @@ function usePoints() {
     points: state.points,
     pointsSpent: state.pointsSpent,
   }));
-}
-
-function ShinobiList() {
-  const { shinobi } = useGameState((state) => ({
-    shinobi: state.shinobi.ids.map((id) => state.shinobi.record[id]),
-  }));
-  return (
-    <ul id="shinobi-list">
-      {shinobi.map((s) => (
-        <li key={s.id}>
-          {s.name} ({s.assignedTask?.id})
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export function App() {

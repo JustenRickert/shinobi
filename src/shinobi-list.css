@@ -1,0 +1,13 @@
+#shinobi-list {
+    width: 20em;
+    margin: 1em;
+
+    .card h4 {
+        margin: 0;
+    }
+}
+
+#shinobi-message-list {
+
+}
+
