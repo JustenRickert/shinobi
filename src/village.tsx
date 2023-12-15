@@ -1,4 +1,10 @@
-import { Shinobi, Task, useGameState, useSetGameState } from "./state";
+import {
+  Genin,
+  ShinobiInTraining,
+  Task,
+  useGameState,
+  useSetGameState,
+} from "./state";
 import { assignTaskToShinobi } from "./state/actions";
 import { IR, assert } from "./util";
 
@@ -9,29 +15,25 @@ function usePoints() {
   }));
 }
 
-function useShinobiPurchasing(shinobi: Shinobi.T) {
-  const update = useSetGameState();
-  const cost = Shinobi.cost(shinobi);
+function useShinobiPurchasing(shinobi: ShinobiInTraining.T) {
+  const setGameState = useSetGameState();
+  const cost = ShinobiInTraining.cost(shinobi);
+
   return {
     cost,
     buy: () => {
-      update((state) => ({
+      setGameState((state) => ({
         ...state,
         points: state.points - cost,
         pointsSpent: state.pointsSpent + cost,
-        village: {
-          ...state.village,
-          shinobiInTraining: state.village.shinobiInTraining.filter(
-            (s) => s.id !== shinobi.id
-          ),
-        },
-        shinobi: IR.add(shinobi, state.shinobi),
+        shinobiInTraining: IR.remove(shinobi.id, state.shinobiInTraining),
+        genin: IR.add(Genin.make(shinobi), state.genin),
       }));
     },
   };
 }
 
-function GraduateShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
+function GraduateShinobiButton({ shinobi }: { shinobi: ShinobiInTraining.T }) {
   const { points } = usePoints();
   const { cost, buy } = useShinobiPurchasing(shinobi);
   return (
@@ -50,9 +52,13 @@ function GraduateShinobiButton({ shinobi }: { shinobi: Shinobi.T }) {
 
 function useSuggestedShinobiAssignment() {
   const { shinobi } = useGameState((state) => ({
-    shinobi: IR.list(state.shinobi),
+    shinobi: IR.list(state.genin),
   }));
-  return shinobi.find((s) => s.behavior.type === "idle") ?? null;
+  return (
+    shinobi.find(
+      (s) => s.behavior.type === "idle" || s.behavior.type === "available"
+    ) ?? null
+  );
 }
 
 function AssignTaskButton({ task }: { task: Task.T }) {
@@ -76,9 +82,17 @@ function AssignTaskButton({ task }: { task: Task.T }) {
   );
 }
 
-export function Village() {
-  const { shinobiInTraining, tasks } = useGameState((state) => ({
-    shinobiInTraining: state.village.shinobiInTraining,
+function Shinobi({ id }: { id: ShinobiInTraining.Id }) {
+  const { shinobi } = useGameState((state) => ({
+    shinobi: state.shinobiInTraining.record[id],
+  }));
+  assert(shinobi);
+  return <GraduateShinobiButton key={shinobi.id} shinobi={shinobi} />;
+}
+
+export function VillageContent() {
+  const { shinobiInTrainingIds, tasks } = useGameState((state) => ({
+    shinobiInTrainingIds: state.shinobiInTraining.ids,
     tasks: IR.list(state.village.tasks),
   }));
 
@@ -86,16 +100,20 @@ export function Village() {
     <div id="village">
       <h2>Village</h2>
 
-      {Boolean(shinobiInTraining.length) && (
+      {
         <>
           <h3>Graduate Shinobi</h3>
-          <ul>
-            {shinobiInTraining.map((shinobi) => (
-              <GraduateShinobiButton key={shinobi.id} shinobi={shinobi} />
-            ))}
-          </ul>
+          {shinobiInTrainingIds.length ? (
+            <ul>
+              {shinobiInTrainingIds.map((id) => (
+                <Shinobi id={id} key={id} />
+              ))}
+            </ul>
+          ) : (
+            <p>None right now :(</p>
+          )}
         </>
-      )}
+      }
 
       {Boolean(tasks.length) && (
         <>

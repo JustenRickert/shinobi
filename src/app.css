@@ -1,11 +1,6 @@
 #app {
   display: flex;
-}
-
-#left-column {
-  
-}
-
-#shinobi-list {
-
+  height: 100vh;
+  width: 100vw;
+  overflow-y: hidden;
 }

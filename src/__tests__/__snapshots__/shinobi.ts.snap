@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`shinobi task experience scales 1`] = `"shinobi=0, task=0, xp=5"`;
+
+exports[`shinobi task experience scales 2`] = `"shinobi=0, task=1, xp=12"`;
+
+exports[`shinobi task experience scales 3`] = `"shinobi=0, task=2, xp=18"`;
+
+exports[`shinobi task experience scales 4`] = `"shinobi=1, task=0, xp=5"`;
+
+exports[`shinobi task experience scales 5`] = `"shinobi=1, task=1, xp=12"`;
+
+exports[`shinobi task experience scales 6`] = `"shinobi=1, task=2, xp=18"`;
+
+exports[`shinobi task experience scales 7`] = `"shinobi=2, task=0, xp=4"`;
+
+exports[`shinobi task experience scales 8`] = `"shinobi=2, task=1, xp=10"`;
+
+exports[`shinobi task experience scales 9`] = `"shinobi=2, task=2, xp=18"`;

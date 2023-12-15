@@ -1,8 +1,8 @@
 import "./app.css";
 
-import { ShinobiList } from "./shinobi-list";
+import { GeninList } from "./genin-list";
 import { useGameState } from "./state";
-import { Village } from "./village";
+import { VillageContent } from "./village";
 
 function usePoints() {
   return useGameState((state) => ({
@@ -18,10 +18,10 @@ export function App() {
       <div id="left-column">
         <p>points: {points}</p>
         <p>spent: {pointsSpent}</p>
-        <ShinobiList />
+        <GeninList />
       </div>
 
-      <Village />
+      <VillageContent />
     </>
   );
 }

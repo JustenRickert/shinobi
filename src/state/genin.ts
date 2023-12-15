@@ -1,11 +1,17 @@
-import { Shinobi, Task } from ".";
-import { uniqueId } from "../util";
+import { Genin as Genin, ShinobiInTraining, Task } from ".";
+import { deviation, uniqueId } from "../util";
 
 export type Id = `shinobi-${string}`;
 
 export interface BehaviorAssignedTask {
   type: "assigned-task";
   task: Task.T;
+  since: number;
+}
+
+export interface BehaviorAvailable {
+  type: "available";
+  since: number;
 }
 
 export interface BehaviorIdle {
@@ -18,16 +24,30 @@ export interface BehaviorInjured {
   since: number;
 }
 
+export type Behavior =
+  | BehaviorIdle
+  | BehaviorAssignedTask
+  | BehaviorInjured
+  | BehaviorAvailable;
+
 export function behaviorAssignedTask(task: Task.T): BehaviorAssignedTask {
   return {
     type: "assigned-task",
     task,
+    since: Date.now(),
   };
 }
 
 export function behaviorIdle(): BehaviorIdle {
   return {
     type: "idle",
+    since: Date.now(),
+  };
+}
+
+export function behaviorAvailable(): BehaviorAvailable {
+  return {
+    type: "available",
     since: Date.now(),
   };
 }
@@ -59,29 +79,27 @@ export interface T {
   id: Id;
   name: string;
   level: number;
-  behavior: BehaviorIdle | BehaviorAssignedTask | BehaviorInjured;
+  behavior: Behavior;
   messages: Message[];
 }
 
-export function make(): T {
+export function make(shinobi?: ShinobiInTraining.T): T {
+  const level = shinobi?.level ?? 0;
+  const name = shinobi?.name;
   return {
     id: `shinobi-${uniqueId()}`,
-    name: "Shinobi John",
-    level: 0,
-    behavior: Shinobi.behaviorIdle(),
+    name: name ?? "Genin Joe",
+    level,
+    behavior: behaviorAvailable(),
     messages: [],
   };
 }
 
 export function addMessage(message: Message) {
-  return (shinobi: Shinobi.T): Shinobi.T => ({
+  return (shinobi: Genin.T): Genin.T => ({
     ...shinobi,
-    messages: shinobi.messages.concat(message).slice(0, 10),
+    messages: [...shinobi.messages, message].slice(-10),
   });
-}
-
-export function cost(shinobi: T) {
-  return 5 * 1.25 ** shinobi.level;
 }
 
 function sigmoid(
@@ -96,4 +114,11 @@ function sigmoid(
 
 export function taskSuccessChance(task: Task.T, shinobi: T) {
   return sigmoid(shinobi.level - task.level, { mid: Math.log(3) });
+}
+
+export function taskExperienceGain(task: Task.T, shinobi: T) {
+  const overlevel = Math.max(0, shinobi.level - task.level);
+  return Math.ceil(
+    deviation(5 * (1 + task.level) ** 1.15 * 0.85 ** overlevel, 0.15)
+  );
 }

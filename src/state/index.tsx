@@ -17,22 +17,23 @@ import {
   mergeAll,
   tap,
 } from "rxjs";
-import { shallowEqual } from "../util";
+import { IR, shallowEqual } from "../util";
 
-import * as Shinobi from "./shinobi";
+import * as Genin from "./genin";
 import * as Task from "./task";
+import * as ShinobiInTraining from "./shinobi-in-training";
 
-export { Shinobi, Task };
+export { Genin, Task, ShinobiInTraining };
 
 export interface GameState {
   points: number;
   pointsSpent: number;
-  shinobi: {
-    ids: Shinobi.Id[];
-    record: Record<Shinobi.Id, Shinobi.T>;
+  genin: {
+    ids: Genin.Id[];
+    record: Record<Genin.Id, Genin.T>;
   };
+  shinobiInTraining: IR.T<ShinobiInTraining.Id, ShinobiInTraining.T>;
   village: {
-    shinobiInTraining: Shinobi.T[];
     tasks: {
       ids: Task.Id[];
       record: Record<Task.Id, Task.T>;
@@ -51,12 +52,15 @@ const GameContext = createContext<{
 let __game_state__: GameState = {
   points: 100,
   pointsSpent: 0,
-  shinobi: {
+  genin: {
     ids: [],
     record: {},
   },
+  shinobiInTraining: IR.add(
+    ShinobiInTraining.make(),
+    IR.make<ShinobiInTraining.Id, ShinobiInTraining.T>()
+  ),
   village: {
-    shinobiInTraining: [Shinobi.make()],
     tasks: {
       ids: [],
       record: {},
@@ -77,14 +81,17 @@ function setGameState(state: GameState) {
 
 export type GameEffect = (
   state$: Observable<GameState>
-) => Observable<(state: GameState) => GameState>;
+) => Observable<void | ((state: GameState) => void | GameState)>;
 
 export function runGameEffects(effects: GameEffect[]) {
   const update$ = from(
     effects.map((effect) => effect(gameSubject.asObservable()))
   ).pipe(mergeAll());
   return update$.subscribe((reducer) => {
-    setGameState(reducer(getGameState()));
+    if (!reducer) return;
+    const nextState = reducer(getGameState());
+    if (!nextState) return;
+    setGameState(nextState);
   });
 }
 
@@ -129,8 +136,12 @@ export function useGameState<T>(getter: (state: GameState) => T, debug?: any) {
   return local;
 }
 
+// TODO Having this is nice for dev server, but doesn't work with jest. (Very
+// annoying.) Might be possible to work by not using type="module" in
+// `package.json` I dunno. Not super important maybe
 if (import.meta.hot) {
   import.meta.hot.accept(() => {
+    console.log("HIT THAT SUH");
     // better way? Probably not.
     window.location.reload();
   });

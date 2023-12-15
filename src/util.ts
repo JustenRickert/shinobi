@@ -43,7 +43,7 @@ export function uniqueId() {
     uniqueId.previous = date;
   }
 
-  return Array.from(date.toString(36)).slice(4).reverse().join("");
+  return Array.from(date.toString(36)).slice(0, -2).reverse().join("");
 }
 
 export function assert(condition: any, ...msg: any[]): asserts condition {
@@ -84,6 +84,56 @@ export function updateIn<S extends {}, V>(
 ) {
   return (state: S): S => updateIn3(keys, reducer, state);
 }
+
+// function update3<R extends {}, S extends keyof R>(
+//   key: S,
+//   fn: (t: R[S]) => R[S],
+//   record: R
+
+// ) {
+// }
+
+// export function updateAt<R extends {}, S extends keyof R = keyof R>(
+//   key: S,
+//   fn: (t: R[S]) => R[S]
+// ): (r: R) => R;
+// export function updateAt<R extends {}, S extends keyof R = keyof R>(
+//   key: S,
+//   fn: (t: R[S]) => R[S],
+//   record?: R
+// ): R | ((r: R) => R) {
+//   // @ts-expect-error
+//   if (!record) return (record: R) => updateAt(key, fn, record);
+//   return {
+//     ...record,
+//     [key]: fn(record[key]),
+//   };
+// }
+
+// export function updateAt<K extends string, T, R extends {}>(
+//   key: K,
+//   t: T,
+//   record: R
+// ) {
+//   return set(lensProp(key), t, record);
+// }
+
+// export function setAt<R extends {}, S extends keyof R = keyof R>(
+//   key: S,
+//   value: R[S]
+// ): (r: R) => R;
+// export function setAt<R extends {}, S extends keyof R = keyof R>(
+//   key: S,
+//   value: R[S],
+//   record?: R
+// ): R | ((r: R) => R) {
+//   // @ts-expect-error
+//   if (!record) return (record: R) => setAt(key, value, record);
+//   return {
+//     ...record,
+//     [key]: value,
+//   };
+// }
 
 // type DeepPartial<T> = T extends {}
 //   ? {
@@ -134,6 +184,15 @@ export namespace IR {
     record: Record<Id, T>;
   };
 
+  export function make<Id extends string, T extends { id: Id }>(
+    ts: T[] = []
+  ): IR.T<Id, T> {
+    return {
+      ids: ts.map((t) => t.id),
+      record: ts.reduce((ir, t) => ({ ...ir, [t.id]: t }), {} as Record<Id, T>),
+    };
+  }
+
   export function add<Id extends string, T extends { id: Id }>(
     t: T,
     ir: IR.T<Id, T>
@@ -156,7 +215,7 @@ export namespace IR {
     const record = {
       ...ir.record,
     };
-    delete ir.record[id];
+    delete record[id];
     return {
       ids: ir.ids.filter((iri) => iri !== id),
       record,
@@ -199,10 +258,27 @@ export namespace IR {
   ) {
     return ir.ids.map((id) => ir.record[id]);
   }
+
+  export function filter<Id extends string, T extends { id: Id }>(
+    predicate: (t: T, i?: number, ts?: T[]) => boolean,
+    ir: IR.T<Id, T>
+  ) {
+    return make(list(ir).filter(predicate));
+  }
 }
 
 export function sampleWeighted<T>(ts: { weight: number; value: T }[]) {
   let r = Math.random() * ts.reduce((sum, { weight }) => sum + weight, 0);
   const { value } = ts.find(({ weight }) => (r -= weight) < 0)!;
   return value;
+}
+
+export function when<T>(...crs: [condition: boolean, result: T][]) {
+  for (const [condition, result] of crs) {
+    if (condition) {
+      return result;
+    }
+  }
+  console.error(...crs);
+  throw new Error("WHEN_ERROR: No condition met");
 }

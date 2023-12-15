@@ -1,21 +1,21 @@
 import { IR, pipe } from "../util";
-import { GameState, Shinobi, Task } from "./";
+import { GameState, Genin, Task } from "./";
 
 export function assignTaskToShinobi(
   task: Task.T,
-  shinobiId: Shinobi.Id,
+  shinobiId: Genin.Id,
   state: GameState
 ) {
   return pipe<GameState>(
     (state) => ({
       ...state,
-      shinobi: IR.update(
+      genin: IR.update(
         shinobiId,
         (shinobi) => ({
           ...shinobi,
-          behavior: Shinobi.behaviorAssignedTask(task),
+          behavior: Genin.behaviorAssignedTask(task),
         }),
-        state.shinobi
+        state.genin
       ),
     }),
     (state) => ({

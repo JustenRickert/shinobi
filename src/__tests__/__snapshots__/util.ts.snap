@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`IR adds 1`] = `
+{
+  "ids": [
+    "key",
+  ],
+  "record": {
+    "key": {
+      "id": "key",
+      "value": "value",
+    },
+  },
+}
+`;
+
+exports[`IR adds 2`] = `
+{
+  "ids": [],
+  "record": {},
+}
+`;

@@ -23,13 +23,15 @@ function generateName(opts: { level: number }) {
   return "Unnamed task";
 }
 
-export function make(): T {
-  const level = sampleWeighted([
-    { value: 0, weight: 10 },
-    { value: 1, weight: 5 },
-    { value: 2, weight: 2 },
-    { value: 3, weight: 1 },
-  ]);
+export function make(options?: { level: number }): T {
+  const level =
+    options?.level ??
+    sampleWeighted([
+      { value: 0, weight: 10 },
+      { value: 1, weight: 5 },
+      { value: 2, weight: 2 },
+      { value: 3, weight: 1 },
+    ]);
   return {
     id: `task-${uniqueId()}`,
     name: generateName({ level }),
