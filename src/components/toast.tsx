@@ -8,11 +8,13 @@ interface ToastContextState {
     header: string;
     body: JSX.Element;
   };
+  unsetContent: () => void;
   setContent: (header: string, element: JSX.Element) => void;
 }
 
 const ToastContext = createContext<ToastContextState>({
   content: null,
+  unsetContent: () => {},
   setContent: () => {},
 });
 
@@ -21,6 +23,9 @@ export function ToastProvider({ children }: { children: JSX.Element }) {
   const value = useMemo<ToastContextState>(
     () => ({
       content,
+      unsetContent: () => {
+        setContent(null);
+      },
       setContent: (header: string, body: JSX.Element) => {
         setContent({
           header,
@@ -36,7 +41,6 @@ export function ToastProvider({ children }: { children: JSX.Element }) {
         <>
           <div id="toast" className="card">
             <h2>{content.header}</h2>
-            <hr />
             <div id="toast-content">{content.body}</div>
           </div>
           <div id="toast-background-overlay" onClick={() => setContent(null)} />
@@ -48,9 +52,10 @@ export function ToastProvider({ children }: { children: JSX.Element }) {
 }
 
 export function useToast() {
-  const { content, setContent } = useContext(ToastContext);
+  const { content, setContent, unsetContent } = useContext(ToastContext);
   return {
     isToastShown: Boolean(content),
+    closeToast: unsetContent,
     openToast: setContent,
   };
 }

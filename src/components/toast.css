@@ -11,6 +11,11 @@
   max-height: 70%;
 }
 
+#toast h2 {
+  margin: 0.25em 0;
+  border-bottom: 1px solid gray;
+}
+
 #toast-content {
   overflow-y: auto;
 }
@@ -19,7 +24,17 @@
   position: fixed;
   height: 100vh;
   width: 100vw;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(1px);
   z-index: 1;
-  /* background-color: black; */
+  background-color: rgba(0, 0, 0, 0.1);
+  animation: fade-in 125ms;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }

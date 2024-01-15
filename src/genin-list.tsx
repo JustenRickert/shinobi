@@ -87,6 +87,19 @@ const Messages = function Messages({ id }: { id: Genin.Id }) {
   );
 };
 
+// function useProgress({from, to }: { from: number, to: number}) {
+//   const [now, setNow] = useState(() => Date.now());
+//   useEffect(() => {
+//     const sub = animationFrames().subscribe(() => setNow(() => Date.now()));
+//     return () => {
+//       sub.unsubscribe();
+//     };
+//   }, []);
+//   return {
+
+//   }
+// }
+
 function ProgressBar({ behavior }: { behavior: Genin.Behavior }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -156,6 +169,12 @@ export function GeninList() {
   const { shinobiIds } = useGameState((state) => ({
     shinobiIds: state.genin.ids,
   }));
+  if (!shinobiIds.length)
+    return (
+      <>
+        <p>Your village doesn't have any genin.</p>
+      </>
+    );
   return (
     <ul id="genin-list">
       {shinobiIds.map((id) => (

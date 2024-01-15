@@ -1,3 +1,7 @@
+import { zip } from "ramda";
+
+export { IR } from "./ir";
+
 export function entries<O extends {}>(o: O) {
   return Object.entries(o) as [keyof O, O][];
 }
@@ -43,7 +47,7 @@ export function uniqueId() {
     uniqueId.previous = date;
   }
 
-  return Array.from(date.toString(36)).slice(0, -2).reverse().join("");
+  return Array.from(date.toString(36)).reverse().join("");
 }
 
 export function assert(condition: any, ...msg: any[]): asserts condition {
@@ -165,7 +169,7 @@ export function updateIn<S extends {}, V>(
 //   };
 // }
 
-export function pipe<S>(...fns: ((s: S) => S)[]) {
+export function pipeM<S>(...fns: ((s: S) => S)[]) {
   return (s: S) => fns.reduceRight((s, fn) => fn(s), s);
 }
 
@@ -173,98 +177,9 @@ export function thru<S>(s: S, ...fns: ((s: S) => S)[]) {
   return fns.reduce((s, fn) => fn(s), s);
 }
 
-export function sample<T>(ts: T[]) {
+export function sample<T>(ts: T[] | readonly T[]) {
   assert(ts.length);
   return ts[Math.floor(Math.random() * ts.length)];
-}
-
-export namespace IR {
-  export type T<Id extends string, T extends { id: Id }> = {
-    ids: Id[];
-    record: Record<Id, T>;
-  };
-
-  export function make<Id extends string, T extends { id: Id }>(
-    ts: T[] = []
-  ): IR.T<Id, T> {
-    return {
-      ids: ts.map((t) => t.id),
-      record: ts.reduce((ir, t) => ({ ...ir, [t.id]: t }), {} as Record<Id, T>),
-    };
-  }
-
-  export function add<Id extends string, T extends { id: Id }>(
-    t: T,
-    ir: IR.T<Id, T>
-  ): IR.T<Id, T> {
-    assert(!ir.ids.includes(t.id), "Cannot `add`", { t, ir });
-    return {
-      ids: ir.ids.concat(t.id),
-      record: {
-        ...ir.record,
-        [t.id]: t,
-      },
-    };
-  }
-
-  export function remove<Id extends string, T extends { id: Id }>(
-    id: Id,
-    ir: IR.T<Id, T>
-  ): IR.T<Id, T> {
-    assert(ir.ids.includes(id), "Cannot `remove`", { id, ir });
-    const record = {
-      ...ir.record,
-    };
-    delete record[id];
-    return {
-      ids: ir.ids.filter((iri) => iri !== id),
-      record,
-    };
-  }
-
-  function update2<Id extends string, T extends { id: Id }>(
-    id: Id,
-    fn: (t: T) => T
-  ) {
-    return (ir: IR.T<Id, T>): IR.T<Id, T> => ({
-      ids: ir.ids,
-      record: {
-        ...ir.record,
-        [id]: fn(ir.record[id]),
-      },
-    });
-  }
-
-  export function update<Id extends string, T extends { id: Id }>(
-    id: Id,
-    fn: (t: T) => T
-  ): (ir: IR.T<Id, T>) => IR.T<Id, T>;
-  export function update<Id extends string, T extends { id: Id }>(
-    id: Id,
-    fn: (t: T) => T,
-    ir: IR.T<Id, T>
-  ): IR.T<Id, T>;
-  export function update<Id extends string, T extends { id: Id }>(
-    id: Id,
-    fn: (t: T) => T,
-    ir?: IR.T<Id, T>
-  ) {
-    if (ir) return update2(id, fn)(ir);
-    return update2(id, fn);
-  }
-
-  export function list<Id extends string, T extends { id: Id }>(
-    ir: IR.T<Id, T>
-  ) {
-    return ir.ids.map((id) => ir.record[id]);
-  }
-
-  export function filter<Id extends string, T extends { id: Id }>(
-    predicate: (t: T, i?: number, ts?: T[]) => boolean,
-    ir: IR.T<Id, T>
-  ) {
-    return make(list(ir).filter(predicate));
-  }
 }
 
 export function sampleWeighted<T>(ts: { weight: number; value: T }[]) {
@@ -281,4 +196,52 @@ export function when<T>(...crs: [condition: boolean, result: T][]) {
   }
   console.error(...crs);
   throw new Error("WHEN_ERROR: No condition met");
+}
+
+/**
+ * Probably works. not tested exactly
+ */
+export function memoizeOne<Fn extends (...args: any[]) => any>(fn: Fn) {
+  let last: null | { args: Parameters<Fn>; result: ReturnType<Fn> } = null;
+  return (...args: Parameters<Fn>) => {
+    if (!last || !zip(args, last.args).every(([l, r]) => l === r)) {
+      const result = fn(...args);
+      last = { args, result };
+      return result as ReturnType<Fn>;
+    }
+    return last.result;
+  };
+}
+
+export function mouseEvents(
+  view: SVGElement,
+  {
+    onDown,
+    onMove,
+    onUp,
+    onLeave,
+    onOut,
+  }: // onClick,
+  {
+    onDown: (e: MouseEvent) => void;
+    onUp?: (e: MouseEvent) => void;
+    onOut?: (e: MouseEvent) => void;
+    onLeave?: (e: MouseEvent) => void;
+    onMove: (e: MouseEvent) => void;
+    // onClick?: (e: MouseEvent) => void;
+  }
+) {
+  view.addEventListener("mousedown", onDown);
+  if (onUp) view.addEventListener("mouseup", onUp);
+  if (onOut) view.addEventListener("mouseout", onOut);
+  if (onLeave) view.addEventListener("mouseleave", onLeave);
+  view.addEventListener("mousemove", onMove);
+  // if (onClick) view.addEventListener("click", onClick);
+  return () => {
+    view.removeEventListener("mousedown", onDown);
+    if (onUp) view.removeEventListener("mouseup", onUp);
+    if (onLeave) view.removeEventListener("mouseleave", onLeave);
+    view.removeEventListener("mousemove", onMove);
+    // if (onClick) view.removeEventListener("click", onClick);
+  };
 }

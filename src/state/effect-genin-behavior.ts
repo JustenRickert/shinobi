@@ -15,7 +15,7 @@ import {
   SHINOBI_IDLE_TASK_TIMEOUT_BASE,
   SHINOBI_INJURED_TIMEOUT_BASE,
 } from "../constant.ts";
-import { IR, assert, chance, pipe, sample, thru } from "../util.ts";
+import { IR, assert, chance, pipeM, sample, thru } from "../util.ts";
 import { assignTaskToShinobi } from "./actions.ts";
 import { addMessage } from "./genin.ts";
 import { GameState, Genin, Task } from "./index.tsx";
@@ -25,13 +25,13 @@ export function makeShinobiBehoviorUpdateStream(
   state$: Observable<GameState>
 ) {
   const taskSuccessFn = (task: Task.T) =>
-    pipe<GameState>(
+    pipeM<GameState>(
       over(lensProp("points"), (p) => p + task.points),
       over(
         lensProp("genin"),
         IR.update(
           id,
-          pipe(
+          pipeM(
             addMessage({ type: "task-success", when: Date.now(), task }),
             set(lensProp("behavior"), Genin.behaviorIdle())
           )
@@ -40,12 +40,12 @@ export function makeShinobiBehoviorUpdateStream(
     );
 
   const taskFailureFn = (task: Task.T) =>
-    pipe<GameState>(
+    pipeM<GameState>(
       over(
         lensProp("genin"),
         IR.update(
           id,
-          pipe(
+          pipeM(
             addMessage({ type: "task-failed", when: Date.now(), task }),
             set(lensProp("behavior"), Genin.behaviorIdle())
           )
@@ -63,7 +63,7 @@ export function makeShinobiBehoviorUpdateStream(
     return assignTaskToShinobi(task, id, state);
   };
 
-  const turnIdle = pipe<GameState>((state: GameState) => ({
+  const turnIdle = pipeM<GameState>((state: GameState) => ({
     ...state,
     genin: thru(
       state.genin,
@@ -74,7 +74,7 @@ export function makeShinobiBehoviorUpdateStream(
     ),
   }));
 
-  const turnAvailable = pipe<GameState>((state: GameState) => ({
+  const turnAvailable = pipeM<GameState>((state: GameState) => ({
     ...state,
     genin: thru(
       state.genin,

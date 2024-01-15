@@ -1,4 +1,4 @@
-import { IR, pipe } from "../util";
+import { IR, pipeM } from "../util";
 import { GameState, Genin, Task } from "./";
 
 export function assignTaskToShinobi(
@@ -6,7 +6,7 @@ export function assignTaskToShinobi(
   shinobiId: Genin.Id,
   state: GameState
 ) {
-  return pipe<GameState>(
+  return pipeM<GameState>(
     (state) => ({
       ...state,
       genin: IR.update(

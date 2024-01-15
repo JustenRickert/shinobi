@@ -1,3 +1,7 @@
+import "./village.css";
+
+import { png } from "./assets";
+import { useToast } from "./components/toast";
 import {
   Genin,
   ShinobiInTraining,
@@ -8,19 +12,17 @@ import {
 import { assignTaskToShinobi } from "./state/actions";
 import { IR, assert } from "./util";
 
-function usePoints() {
-  return useGameState((state) => ({
+function useShinobiGraduation(id: ShinobiInTraining.Id) {
+  const { shinobi, points } = useGameState((state) => ({
     points: state.points,
-    pointsSpent: state.pointsSpent,
+    shinobi: state.shinobiInTraining.record[id],
   }));
-}
-
-function useShinobiPurchasing(shinobi: ShinobiInTraining.T) {
   const setGameState = useSetGameState();
   const cost = ShinobiInTraining.cost(shinobi);
 
   return {
     cost,
+    disabled: points < cost,
     buy: () => {
       setGameState((state) => ({
         ...state,
@@ -33,18 +35,49 @@ function useShinobiPurchasing(shinobi: ShinobiInTraining.T) {
   };
 }
 
-function GraduateShinobiButton({ shinobi }: { shinobi: ShinobiInTraining.T }) {
-  const { points } = usePoints();
-  const { cost, buy } = useShinobiPurchasing(shinobi);
+function ShinobiInTrainingToast({ id }: { id: ShinobiInTraining.Id }) {
+  const { cost, buy, disabled } = useShinobiGraduation(id);
+  const { closeToast } = useToast();
+  const handleClick = () => {
+    closeToast();
+    buy();
+  };
+  return (
+    <div className="shinobi-in-training-toast">
+      <p>Cost to graduate: {cost}</p>
+      <div>
+        <button disabled={disabled} onClick={handleClick}>
+          Graduate Shinobi
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ShinobiInTrainingSquare({ id }: { id: ShinobiInTraining.Id }) {
+  const { shinobi } = useGameState((state) => ({
+    shinobi: state.shinobiInTraining.record[id],
+  }));
+  const { openToast } = useToast();
+  const handleClick = () => {
+    openToast(`Student ${shinobi.name}`, <ShinobiInTrainingToast id={id} />);
+  };
   return (
     <li>
-      <button
-        disabled={points < cost}
-        onClick={() => {
-          buy();
-        }}
-      >
-        Graduate {shinobi.name} ({shinobi.level}), {cost}
+      <button onClick={handleClick} className="card shinobi-in-training">
+        <div>
+          <img height={48} width={48} src={png("baby-shinobi")}></img>
+        </div>
+        <div className="information">
+          <h5>{shinobi.name}</h5>
+          <p>level: {shinobi.level}</p>
+          <p>
+            {shinobi.affinityType}{" "}
+            {shinobi.jutsuTypes.map((type) => (
+              <span>{type}</span>
+            ))}
+          </p>
+        </div>
       </button>
     </li>
   );
@@ -82,17 +115,47 @@ function AssignTaskButton({ task }: { task: Task.T }) {
   );
 }
 
-function Shinobi({ id }: { id: ShinobiInTraining.Id }) {
-  const { shinobi } = useGameState((state) => ({
-    shinobi: state.shinobiInTraining.record[id],
+// function ProgressBar({ behavior }: { behavior: Genin.Behavior }) {
+//   const [now, setNow] = useState(() => Date.now());
+//   useEffect(() => {
+//     const sub = animationFrames().subscribe(() => setNow(() => Date.now()));
+//     return () => {
+//       sub.unsubscribe();
+//     };
+//   }, []);
+
+//   // const timeout = when(
+//   //   [behavior.type === "idle", SHINOBI_IDLE_TASK_TIMEOUT_BASE],
+//   //   [behavior.type === "assigned-task", SHINOBI_IDLE_TASK_TIMEOUT_BASE],
+//   //   [behavior.type === "injured", SHINOBI_INJURED_TIMEOUT_BASE]
+//   // );
+//   const until = behavior.since + timeout;
+
+//   return <progress max={100} value={100 - (100 * (until - now)) / timeout} />;
+// }
+
+function ShinobiInTrainingContent() {
+  const { ids } = useGameState((state) => ({
+    ids: state.shinobiInTraining.ids,
   }));
-  assert(shinobi);
-  return <GraduateShinobiButton key={shinobi.id} shinobi={shinobi} />;
+  return (
+    <>
+      <h3>Shinobi Academy</h3>
+      {!ids.length ? (
+        <p>No students :o</p>
+      ) : (
+        <ul className="shinobi-in-training-list">
+          {ids.map((id) => (
+            <ShinobiInTrainingSquare key={id} id={id} />
+          ))}
+        </ul>
+      )}
+    </>
+  );
 }
 
 export function VillageContent() {
-  const { shinobiInTrainingIds, tasks } = useGameState((state) => ({
-    shinobiInTrainingIds: state.shinobiInTraining.ids,
+  const { tasks } = useGameState((state) => ({
     tasks: IR.list(state.village.tasks),
   }));
 
@@ -100,20 +163,7 @@ export function VillageContent() {
     <div id="village">
       <h2>Village</h2>
 
-      {
-        <>
-          <h3>Graduate Shinobi</h3>
-          {shinobiInTrainingIds.length ? (
-            <ul>
-              {shinobiInTrainingIds.map((id) => (
-                <Shinobi id={id} key={id} />
-              ))}
-            </ul>
-          ) : (
-            <p>None right now :(</p>
-          )}
-        </>
-      }
+      <ShinobiInTrainingContent />
 
       {Boolean(tasks.length) && (
         <>

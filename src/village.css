@@ -1,0 +1,51 @@
+.shinobi-in-training {
+  display: flex;
+  padding: 0;
+  margin: 0 0.75em 0.75em 0;
+  border-radius: 8px;
+  padding: 0.125em;
+}
+
+.shinobi-in-training .information {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 0.5em;
+}
+
+.shinobi-in-training .information h5 {
+  margin: 0;
+}
+
+.shinobi-in-training .information p {
+  margin: 0;
+}
+
+.shinobi-in-training-toast {
+  display: flex;
+  flex-direction: column;
+}
+
+/* .shinobi-in-training-square .progress-bar-container {
+  width: 3px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.shinobi-in-training-square .progress-bar {
+  margin: 0.25em 0;
+  background-color: aquamarine;
+  width: 3px;
+} */
+
+.shinobi-in-training-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
