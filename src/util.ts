@@ -1,4 +1,6 @@
-import { zip } from "ramda";
+import * as R from "ramda";
+
+import { IR } from "./ir";
 
 export { IR } from "./ir";
 
@@ -57,13 +59,36 @@ export function assert(condition: any, ...msg: any[]): asserts condition {
   }
 }
 
+export function partition<T>(pred: (t: T) => boolean, ts: T[]): [T[], T[]] {
+  const left = [];
+  const right = [];
+  for (const t of ts) {
+    if (pred(t)) left.push(t);
+    else right.push(t);
+  }
+  return [left, right];
+}
+
 export function chance(p: number) {
   return Math.random() < p;
 }
 
-export function deviation(n: number, p: number) {
+export function deviationFloat(n: number, p: number) {
   const d = p * 2 * (Math.random() - 0.5);
   return n * (1 - d);
+}
+
+export function deviationInt(n: number, p: number) {
+  return Math.round(deviationFloat(n, p));
+}
+
+export function randomFloat(low: number, high: number) {
+  assert(high >= low);
+  return low + Math.random() * (high - low);
+}
+
+export function randomInt(low: number, high: number) {
+  return Math.round(randomFloat(low, high));
 }
 
 function updateIn3<S extends {}, V>(
@@ -204,7 +229,7 @@ export function when<T>(...crs: [condition: boolean, result: T][]) {
 export function memoizeOne<Fn extends (...args: any[]) => any>(fn: Fn) {
   let last: null | { args: Parameters<Fn>; result: ReturnType<Fn> } = null;
   return (...args: Parameters<Fn>) => {
-    if (!last || !zip(args, last.args).every(([l, r]) => l === r)) {
+    if (!last || !R.zip(args, last.args).every(([l, r]) => l === r)) {
       const result = fn(...args);
       last = { args, result };
       return result as ReturnType<Fn>;
@@ -244,4 +269,28 @@ export function mouseEvents(
     view.removeEventListener("mousemove", onMove);
     // if (onClick) view.removeEventListener("click", onClick);
   };
+}
+
+export function deepMerge<T extends {} | IR>(a: T, b: DeepPartial<T> | IR): T {
+  if (a instanceof IR) {
+    assert(
+      b instanceof IR,
+      "`deepMerge` only replaces IRs. Therefore `b` needs to be an IR. (It will only replace `a`)",
+      { a, b }
+    );
+    return b as typeof a;
+  }
+  if (a instanceof Array) {
+    assert(b instanceof Array);
+    return b as typeof a;
+  }
+  return R.is(Object, a) && R.is(Object, b) ? R.mergeWith(deepMerge, a, b) : b;
+}
+
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+export function fail(message: string) {
+  throw new Error(`FAILURE: ${message}`);
 }

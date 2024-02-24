@@ -1,0 +1,18 @@
+#tab-switch nav ul {
+    display: flex;
+    flex-direction: row;
+}
+
+#tasks-tab.empty {
+    display: flex;
+}
+
+#activities-tab .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+#upgrades-tab {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}

@@ -1,19 +1,34 @@
 #app {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100vw;
   overflow-y: hidden;
 }
 
-#bottom-panel {
+#active-panel {
   position: fixed;
   bottom: 0;
-  margin: 0 8px 8px 8px;
-  width: calc(100% - 16px);
+  margin: 0 0.5em 0.5em 0.5em;
+  width: calc(100% - 3em);
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
 
   .window {
     background-color: white;
   }
+}
+
+.block-list {
+  display: flex;
+
+  li {
+    margin: 1px;
+    padding: 0 0.25em 0.25em 0;
+  }
+}
+
+.rightalign {
+  justify-self: flex-end;
 }

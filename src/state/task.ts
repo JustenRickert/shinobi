@@ -1,4 +1,4 @@
-import { deviation, sampleWeighted, uniqueId } from "../util";
+import { deviationFloat, sampleWeighted, uniqueId } from "../util";
 
 export type Id = `task-${string}`;
 
@@ -36,6 +36,6 @@ export function make(options?: { level: number }): T {
     id: `task-${uniqueId()}`,
     name: generateName({ level }),
     level,
-    points: Math.round(deviation(25 * 1.25 ** level, 0.1)),
+    points: Math.round(deviationFloat(25 * 1.25 ** level, 0.1)),
   };
 }

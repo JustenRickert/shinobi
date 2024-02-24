@@ -1,5 +1,5 @@
 import { Genin as Genin, ShinobiInTraining, Task } from ".";
-import { deviation, uniqueId } from "../util";
+import { deviationFloat, uniqueId } from "../util";
 
 export type Id = `shinobi-${string}`;
 
@@ -119,6 +119,6 @@ export function taskSuccessChance(task: Task.T, shinobi: T) {
 export function taskExperienceGain(task: Task.T, shinobi: T) {
   const overlevel = Math.max(0, shinobi.level - task.level);
   return Math.ceil(
-    deviation(5 * (1 + task.level) ** 1.15 * 0.85 ** overlevel, 0.15)
+    deviationFloat(5 * (1 + task.level) ** 1.15 * 0.85 ** overlevel, 0.15)
   );
 }
