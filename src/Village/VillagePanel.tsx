@@ -12,7 +12,7 @@ import {
 } from "../types";
 import { assert, deepMerge } from "../util";
 import { allUpgrades as ALL_UPGRADES, natureUpgrades } from "../village";
-import { VillageMissionsTab } from "./VillageMissionsTab";
+import VillageMissionsTab from "./VillageMissionsTab";
 
 function setPurchaseUpgrade({
   villageId,

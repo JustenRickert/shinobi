@@ -36,6 +36,8 @@ export class IR<Id extends string = string, T extends { id: Id } = { id: Id }>
         this.record[t.id] = t;
       }
     } else if (record instanceof IR) {
+      // NOTE Do not spread all properties of an IR argument into the new IR.
+      // This will probably cause a memory leak
       this.options = record.options;
       this.ids = record.ids;
       this.record = record.record;
@@ -155,6 +157,18 @@ export class IR<Id extends string = string, T extends { id: Id } = { id: Id }>
     return t;
   }
 
+  // TODO memo?
+  public subset(ids: Id[]) {
+    return new IR<Id, T>({
+      options: this.options,
+      ids,
+      record: ids.reduce((record, id) => {
+        record[id] = this.record[id];
+        return record;
+      }, {} as Record<Id, T>),
+    });
+  }
+
   public set(id: Id, t: DeepPartial<T>) {
     assert(this.record[id], "IR should already contain `id` %s", id);
     return new IR<Id, T>({
@@ -167,8 +181,11 @@ export class IR<Id extends string = string, T extends { id: Id } = { id: Id }>
     });
   }
 
+  private filterMemo = new Map<(t: T) => boolean, IR<Id, T>>();
+
   public filter(pred: (t: T) => boolean) {
-    return new IR<Id, T>({
+    if (this.filterMemo.has(pred)) return this.filterMemo.get(pred)!;
+    const result = new IR<Id, T>({
       options: this.options,
       ...this.list().reduce(
         (acc, t) => {
@@ -181,6 +198,8 @@ export class IR<Id extends string = string, T extends { id: Id } = { id: Id }>
         { ids: [], record: {} } as SerializedIR
       ),
     });
+    this.filterMemo.set(pred, result);
+    return result;
   }
 
   public list() {

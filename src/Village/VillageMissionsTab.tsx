@@ -1,26 +1,19 @@
+import { memo } from "preact/compat";
 import { useCallback, useState } from "preact/hooks";
 
-import {
-  setAdvanceShinobiTaskActivity,
-  setGameState,
-  useGameState,
-} from "../game";
+import { setGameState, useGameState } from "../game";
 import { rollMissions } from "../mission";
-import type { GameState, MissionId, ShinobiId, VillageId } from "../types";
-import { assert, partition } from "../util";
+import type { GameState, MissionId, VillageId } from "../types";
+import { partition } from "../util";
 
-function setVillageMissions(id: VillageId) {
+function setRollVillageMissions(id: VillageId) {
+  // TODO this should cost points. How much?
   setGameState((state) => {
     const village = state.villages.get(id);
     const [assignedMissionIds, unassignedMissionIds] = partition(
       (missionId) => Boolean(state.missions.get(missionId).assigned),
       village.missionIds
     );
-    console.log({
-      assignedMissionIds,
-      unassignedMissionIds,
-      missionIds: village.missionIds,
-    });
     const newMissions = rollMissions({ villageId: id });
     return {
       ...state,
@@ -32,37 +25,43 @@ function setVillageMissions(id: VillageId) {
   });
 }
 
-function getTaskActivityBlockL(id: ShinobiId) {
+function selectedMissionL(missionId: "" | MissionId) {
   return useCallback(
-    (state: GameState) => ({
-      shinobi: state.shinobi.get(id),
-    }),
-    [id]
+    (state: GameState) => {
+      const mission = !missionId ? null : state.missions.get(missionId);
+      return {
+        mission,
+      };
+    },
+    [missionId]
   );
 }
 
-function TaskActivityBlock({ id }: { id: ShinobiId }) {
-  const { shinobi } = useGameState(getTaskActivityBlockL(id));
-  assert(shinobi.activity?.what === "task");
+function SelectedMission({ id }: { id: "" | MissionId }) {
+  const { mission } = useGameState(selectedMissionL(id));
+  if (!mission) return <div>Select a mission</div>;
   return (
-    <button onClick={() => setAdvanceShinobiTaskActivity(id)}>
-      S ({shinobi.activity.ticks}/{shinobi.activity.ticksRequired})
-    </button>
+    <div>
+      <h5>
+        {mission.id.slice(8)}, {mission.rarity}, level {mission.difficulty}
+      </h5>
+    </div>
   );
 }
 
 function villageMissionsL(id: VillageId) {
   return useCallback(
     (state: GameState) => {
+      const village = state.villages.get(id);
       return {
-        missions: state.missions.filter((m) => m.villageId === id),
+        missions: state.missions.subset(village.missionIds),
       };
     },
     [id]
   );
 }
 
-export function VillageMissionsTab({ id }: { id: VillageId }) {
+function VillageMissionsTab({ id }: { id: VillageId }) {
   const [selectedMissionId, setSelectedMissionId] = useState<"" | MissionId>(
     ""
   );
@@ -72,7 +71,7 @@ export function VillageMissionsTab({ id }: { id: VillageId }) {
     <div id="missions-tab">
       <div>
         {/** TODO */}
-        {selectedMissionId}
+        <SelectedMission id={selectedMissionId} />
       </div>
       {!missions.length ? (
         <p>No missions :(</p>
@@ -87,7 +86,19 @@ export function VillageMissionsTab({ id }: { id: VillageId }) {
           ))}
         </ul>
       )}
-      <button onClick={() => setVillageMissions(id)}>Roll missions</button>
+      <button
+        onClick={() => {
+          // TODO having these states separate causes an error because updates
+          // happen asynchronously at different times. Should probably have
+          // these both in global state
+          setSelectedMissionId("");
+          setRollVillageMissions(id);
+        }}
+      >
+        Roll missions
+      </button>
     </div>
   );
 }
+
+export default memo(VillageMissionsTab);

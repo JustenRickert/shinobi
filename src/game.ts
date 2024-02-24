@@ -163,7 +163,8 @@ const defaultGameState: GameState = {
 
 export function serializeGameState(state: GameState) {
   return Object.entries(state).reduce((state, [key, value]) => {
-    if (value && typeof value === "object" && !Array.isArray(value))
+    if (Array.isArray(value)) state[key] = value;
+    else if (value && typeof value === "object")
       state[key] = serializeGameState(value);
     else if (value instanceof Map)
       state[key] = {
@@ -186,14 +187,12 @@ function deserializeGameState(state: object) {
     ) {
       state[key] = value;
       return state;
-    }
-    if (IR.isSerializedIR(value)) {
+    } else if (IR.isSerializedIR(value)) {
       state[key] = new IR(value);
       return state;
-    }
-    if (typeof value === "object") {
+    } else if (typeof value === "object") {
       if (value["@type"] === "Map") state[key] = new Map(value);
-      state[key] = deserializeGameState(value);
+      else state[key] = deserializeGameState(value);
       return state;
     }
     console.error({ state, key, value });
@@ -217,7 +216,6 @@ if (process.env.NODE_ENV === "development") {
     __gameState__.missions = makeDefaultMissions();
   }
   for (const v of __gameState__.villages.list()) {
-    v.missionIds = [];
     if (v.upgrades instanceof Map || IR.isSerializedIR(v.upgrades))
       __gameState__.villages.record[v.id].upgrades = new IR();
     __gameState__.villages.record[v.id] = deepMerge(makeRandomVillage(), v);

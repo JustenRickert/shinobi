@@ -1,5 +1,7 @@
 import { IR } from "./util";
 
+export type NumberPercentage = number; // [0, 1]
+
 export interface TaskActivity {
   what: "task";
   villageId: VillageId;
@@ -117,5 +119,9 @@ export interface Mission {
   difficulty: number;
   assigned: null | {
     shinobiId: string;
+    computed: {
+      requiredTicks: number;
+      successChance: NumberPercentage;
+    };
   };
 }
