@@ -4,7 +4,7 @@ Incremental game
 
 ## How dev
 
-- Install nvm (https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
+- Install nvm (https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating, or you might also be able to use your system's package install: `brew`, `apt`, `pacman`, etc.)
 - Install latest node, or I'm using `v20.11.0`
 
 ```sh

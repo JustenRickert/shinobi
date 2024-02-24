@@ -1,4 +1,5 @@
 import { memo } from "preact/compat";
+
 import "./ShinobiShop.css";
 
 import {
